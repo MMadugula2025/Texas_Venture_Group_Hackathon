@@ -29,3 +29,98 @@ response = client.chat.completions.create(
 
 merged_code = response.choices[0].message.content
 print(merged_code)
+
+
+# ----------------------------
+# AI Grid Stress Predictor (Morph Hackathon)
+# ----------------------------
+
+import random
+from openai import OpenAI
+
+# ----------------------------
+# 1️⃣ Initialize Morph client
+# ----------------------------
+client = OpenAI(
+    api_key="YOUR_REAL_API_KEY",
+    base_url="https://api.morphllm.com/v1"
+)
+
+# ----------------------------
+# 2️⃣ Simple Load Prediction + Risk
+# ----------------------------
+def predict_load(temp):
+    """Predict grid load (MW) based on temperature"""
+    return 30000 + temp * 500 + random.randint(-2000, 2000)
+
+def get_risk(load):
+    """Classify risk based on predicted load"""
+    if load < 50000:
+        return "Low"
+    elif load < 70000:
+        return "Medium"
+    else:
+        return "High"
+
+# Example temperature input
+temp_input = 102  # You can change this value
+
+predicted_load = predict_load(temp_input)
+risk_level = get_risk(predicted_load)
+
+print("Forecast Temperature:", temp_input, "°F")
+print("Predicted Load (MW):", predicted_load)
+print("Risk Level:", risk_level)
+
+# ----------------------------
+# 3️⃣ Prepare Morph instructions
+# ----------------------------
+initial_code = f"""
+import random
+
+# Grid load prediction
+def predict_load(temp):
+    return 30000 + temp * 500 + random.randint(-2000, 2000)
+
+# Risk classification
+def get_risk(load):
+    if load < 50000:
+        return "Low"
+    elif load < 70000:
+        return "Medium"
+    else:
+        return "High"
+
+temp_input = {temp_input}
+predicted_load = predict_load(temp_input)
+risk_level = get_risk(predicted_load)
+"""
+
+instructions = """
+Explain why the predicted grid load and risk level are as they are
+based on the forecast temperature.
+Give a simple plain-language explanation and one mitigation suggestion.
+Keep it under 100 words.
+"""
+
+code_edit = "// Generate AI explanation for risk"
+
+# ----------------------------
+# 4️⃣ Call Morph to generate explanation
+# ----------------------------
+response = client.chat.completions.create(
+    model="morph-v3-fast",
+    messages=[
+        {
+            "role": "user",
+            "content": f"<instruction>{instructions}</instruction>\n<code>{initial_code}</code>\n<update>{code_edit}</update>"
+        }
+    ]
+)
+
+# ----------------------------
+# 5️⃣ Print Morph’s explanation
+# ----------------------------
+explanation = response.choices[0].message.content
+print("\n---- AI Explanation ----\n")
+print(explanation)
