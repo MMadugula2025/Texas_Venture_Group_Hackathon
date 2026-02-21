@@ -1,0 +1,78 @@
+# import required libraries
+import pandas as pd
+import numpy as np
+import random
+import streamlit as st
+from openai import OpenAI
+
+# initialize Morph
+client = OpenAI(
+    api_key="YOUR_REAL_API_KEY",  # replace with your Morph API key
+    base_url="https://api.morphllm.com/v1"
+)
+
+# title at the top of webpage
+st.title("AI Energy Usage Simulator")
+
+# file upload component
+# allows user to upload utility bill as csv or excel
+# mock data is used if no upload
+uploaded_file = st.file_uploader("Upload your energy bill (CSV/Excel) or skip for demo:", type=["csv", "xlsx"])
+
+# generates data
+if uploaded_file is not None:
+    # Read user file
+    if uploaded_file.name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file)
+    else:
+        df = pd.read_excel(uploaded_file)
+    st.subheader("Data Preview (Uploaded)")
+else:
+    # Generate mock data for demo
+    hours = range(24)
+    kWh = np.random.randint(10, 50, size=24)  # random usage 10-50 kWh per hour
+    df = pd.DataFrame({"Hour": hours, "kWh": kWh})
+    st.subheader("Mock Energy Data (24 hours)")
+
+# shows first few rows of the dataframe
+st.write(df.head())
+
+# generate simulated energy usage scenarios
+def simulate_scenarios(df):
+    total_usage = df['kWh'].sum()
+    scenarios = {
+        "Off-Peak Shift": total_usage * 0.9,
+        "Reduce HVAC": total_usage * 0.8,
+        "Turn Off Appliances": total_usage * 0.85
+    }
+    return scenarios
+
+scenarios = simulate_scenarios(df)
+
+st.subheader("Scenario Simulation")
+st.bar_chart(pd.Series(scenarios))
+
+# morph AI explanations to explain scenarios in plain language
+st.subheader("AI Explanations")
+for scenario, usage in scenarios.items():
+    initial_code = f"simulated_usage = {usage}"
+
+    instructions = f"""
+Explain how this scenario ({scenario}) affects energy usage, load on the grid, and possible cost savings.
+Keep it under 100 words and give one actionable suggestion.
+"""
+
+    code_edit = "// AI explanation"
+
+    response = client.chat.completions.create(
+        model="morph-v3-fast",
+        messages=[
+            {
+                "role": "user",
+                "content": f"<instruction>{instructions}</instruction>\n<code>{initial_code}</code>\n<update>{code_edit}</update>"
+            }
+        ]
+    )
+
+    explanation = response.choices[0].message.content
+    st.write(f"**{scenario}**: {explanation}")
