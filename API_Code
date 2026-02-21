@@ -1,0 +1,31 @@
+import os
+from openai import OpenAI
+
+# Initialize client
+client = OpenAI(
+    api_key="sk-erSEno-_t962oMl305o8nH7XF1bGpeLACyzMfJdkaeOCYWgT",
+    base_url="https://api.morphllm.com/v1"
+)
+
+# Sample data
+initial_code = """def greet(name):
+    return "Hello " + name"""
+
+code_edit = """def greet(name: str) -> str:
+// ...existing code..."""""
+
+instructions = "I will add type hints"
+
+# Apply the edit
+response = client.chat.completions.create(
+    model="morph-v3-fast", # 
+    messages=[
+        {
+            "role": "user",
+            "content": f"<instruction>{instructions}</instruction>\n<code>{initial_code}</code>\n<update>{code_edit}</update>"
+        }
+    ]
+)
+
+merged_code = response.choices[0].message.content
+print(merged_code)
