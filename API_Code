@@ -1,33 +1,25 @@
-
-# ----------------------------
-# AI Energy Usage Simulator (Hackathon Ready)
-# ----------------------------
-
+# import required libraries
 import pandas as pd
 import numpy as np
 import random
 import streamlit as st
 from openai import OpenAI
 
-# ----------------------------
-# 1️⃣ Initialize Morph client
-# ----------------------------
+# initialize Morph
 client = OpenAI(
     api_key="YOUR_REAL_API_KEY",  # replace with your Morph API key
     base_url="https://api.morphllm.com/v1"
 )
 
-# ----------------------------
-# 2️⃣ Streamlit UI
-# ----------------------------
-st.title("⚡ AI Energy Usage Simulator")
+# title at the top of webpage
+st.title("AI Energy Usage Simulator")
 
-# File upload
+# file upload component
+# allows user to upload utility bill as csv or excel
+# mock data is used if no upload
 uploaded_file = st.file_uploader("Upload your energy bill (CSV/Excel) or skip for demo:", type=["csv", "xlsx"])
 
-# ----------------------------
-# 3️⃣ Load or generate data
-# ----------------------------
+# generates data
 if uploaded_file is not None:
     # Read user file
     if uploaded_file.name.endswith(".csv"):
@@ -41,12 +33,11 @@ else:
     kWh = np.random.randint(10, 50, size=24)  # random usage 10-50 kWh per hour
     df = pd.DataFrame({"Hour": hours, "kWh": kWh})
     st.subheader("Mock Energy Data (24 hours)")
-    
+
+# shows first few rows of the dataframe
 st.write(df.head())
 
-# ----------------------------
-# 4️⃣ Simulation of scenarios
-# ----------------------------
+# generate simulated energy usage scenarios
 def simulate_scenarios(df):
     total_usage = df['kWh'].sum()
     scenarios = {
@@ -61,9 +52,7 @@ scenarios = simulate_scenarios(df)
 st.subheader("Scenario Simulation")
 st.bar_chart(pd.Series(scenarios))
 
-# ----------------------------
-# 5️⃣ Morph AI Explanations
-# ----------------------------
+# morph AI explanations to explain scenarios in plain language
 st.subheader("AI Explanations")
 for scenario, usage in scenarios.items():
     initial_code = f"simulated_usage = {usage}"
